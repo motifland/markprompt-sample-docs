@@ -1,0 +1,219 @@
+## API
+
+Markprompt exposes two endpoints at `https://api.markprompt.com`:
+
+- `/v1/train`: turn your content into embeddings
+- `/v1/completions`: get completions for user prompts
+
+The `/v1/train` endpoint requires authorization using a bearer token. This token can be found in your project settings in the dashboard, and should never be shared publicly. If you suspect that your token has been compromised, you can generate a new one in the dashboard. The `/v1/completions` endpoint can be accessed either from the server using the bearer token, or from the client side using a development key (for non-public testing) or a production key from a whitelisted domain (for public sharing). See below for more details.
+
+### Train content
+
+{% note %}
+Using this endpoint is relevant if you want to programmatically index your content, for instance in a [GitHub action](https://docs.github.com/en/actions). If you don't need this level of automation, we recommend that you use the Markprompt dashboard, which offers simple tools such as GitHub sync and drag-and-drop to make the process easy and setup-free.
+{% /note %}
+
+```http
+POST https://api.markprompt.com/v1/train
+```
+
+Creates and indexes embeddings for your content.
+
+The endpoint accepts two types of payloads:
+
+- A JSON payload.
+- A file payload, for uploading a zip file or a plain text file.
+
+#### Request body (JSON)
+
+In the case of a JSON payload, the content type header must be `application/json`. The JSON payload must be of the form:
+
+{% table %}
+* Key
+* Type
+* Description
+---
+* `files`
+* array (optional)
+* A set of objects with the keys:
+  - `id` a unique identifier for your file, for instance its path in a file system.
+  - `content` the textual content of the file.
+{% /table %}
+
+Example request:
+
+```bash
+curl https://api.markprompt.com/v1/train \
+  -X POST \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    files: [
+      { id: "file_id_1", content: "..." },
+      { id: "file_id_2", content: "..." },
+    ]
+  }'
+```
+
+#### Request body (file)
+
+In the case of a file payload, the content type header must be `application/zip` or `application/octet-stream`.
+
+Example request:
+
+```bash
+curl https://api.markprompt.com/v1/train \
+  -X POST \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/zip" \
+  --data-binary @data.zip
+```
+
+Here is an example in JavaScript that reads a file from disk and sends it to the `/train` endpoint:
+
+```js
+const fs = require('fs')
+
+const file = fs.createReadStream('data.zip');
+
+await fetch('https://api.markprompt.com/v1/train', {
+  method: 'POST',
+  body: file,
+  headers: {
+    'Authorization': 'Bearer <TOKEN>',
+    'Content-Type': 'application/zip',
+  },
+});
+```
+
+#### Request headers
+
+- `Authorization`
+
+  The authorization header, carrying the bearer token.
+- `Content-Type`
+
+  The content type of the payload. Currently supported values are `application/json`, `application/zip` and `application/octet-stream`.
+- `x-markprompt-force-retrain`
+
+  By default, if a file has been trained, sending it again with the same content will not retrain the file. If for some reason you want to force a retraining, you can pass a long this header with the value set to `true`.
+
+### Create completion
+
+```http
+POST https://api.markprompt.com/v1/completions
+```
+
+Creates a completion for the provided prompt, taking into account the content you have trained your project on.
+
+#### Request body
+
+{% table %}
+* Key
+* Type
+* Description
+---
+* `prompt`
+* string
+* The input prompt to generate completions for.
+---
+* `projectKey`
+* string
+* The API key associated to your project. If shared publicly, use the production key from a whitelisted domain. If not, for instance on localhost, use the development key.
+---
+* `model`
+* `gpt-4` | `gpt-4-0314` | `gpt-4-32k` | `gpt-4-32k-0314` | `gpt-3.5-turbo` | `gpt-3.5-turbo-0301` | `text-davinci-003` | `text-davinci-002` | `text-curie-001` | `text-babbage-001` | `text-ada-001` | `davinci` | `curie` | `babbage` | `ada`
+* The [completions model](https://platform.openai.com/docs/api-reference/completions) to use.
+---
+* `iDontKnowMessage`
+* string
+* Message to return when no response is found.
+---
+* `promptTemplate`
+* string
+* Custom [prompt template](#template) that wraps prompt and context.
+---
+* `stream`
+* boolean
+* If true, return the response as a [Readable Stream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream). Otherwise, return as a plain JSON object. Default: true.
+{% /table %}
+
+#### Example request
+
+```bash
+curl https://api.markprompt.com/v1/completions \
+  -X POST \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "How do I self-host the database?",
+    "iDontKnowMessage": "Sorry, I do not know.",
+    "model": "gpt-4"
+  }'
+```
+
+#### Response
+
+By default, the response is returned as a [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) of the form:
+
+```
+[path1,path2,...]___START_RESPONSE_STREAM___In order to self-host...
+```
+
+The stream is split in two parts, separated by the `___START_RESPONSE_STREAM___` tag:
+
+- The first part of the stream is the list of references that were used to produce the content. Namely the page IDs containing the sections that were used in the final prompt.
+- The second part is the streamed response, which is the actual result that the completions endpoint produced as an answer to the input prompt.
+
+If the `stream` flag is set to false, the response is returned as a plain JSON object with a `text` field containing the completion, and a `references` field containing the list of references used to create the completion:
+
+```json
+{
+  text: "Completion response...",
+  references: ["page1", ...]
+}
+```
+
+{% note type="warning" %}
+When querying completions, do not use the bearer token if the code is exposed publicly, for instance on a public website. Instead, use the project production key, and make the request from a whitelisted domain. Obtaining the project production key and whitelisting the domain is done in the project settings.
+{% /note %}
+
+Here is a working example of how to consume the stream in JavaScript. Note the use of `projectKey` and no authorization header: this code can be shared publicly, and will work from a domain you have whitelisted in the project settings.
+
+```js
+const res = await fetch('https://api.markprompt.com/v1/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    prompt: 'How do I self-host a database?',
+    iDontKnowMessage: 'I don't know',
+    projectKey: '<your_project_key>',
+    model: 'gpt-3.5-turbo'
+  }),
+});
+
+if (!res.ok || !res.body) {
+  console.error('Error:', await res.text());
+  return;
+}
+
+const reader = res.body.getReader();
+const decoder = new TextDecoder();
+let response = '';
+
+while (true) {
+  const { value, done } = await reader.read();
+  const chunk = decoder.decode(value);
+  response = response + chunk;
+  if (done) {
+    break;
+  }
+}
+
+const parts = response.split('___START_RESPONSE_STREAM___');
+
+console.info('Answer:', parts[1]);
+console.info('References:', parts[0]);
+```

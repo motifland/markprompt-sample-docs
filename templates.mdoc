@@ -1,0 +1,75 @@
+## Templates
+
+When querying the completions endpoint, the user's prompt is wrapped inside a parent prompt that injects context that is used for building the answer. The default prompt is the following:
+
+```
+{% $defaultPromptTemplate %}
+```
+
+Here, `{{PROMPT}}` is the prompt that you pass along the request to the completions endpoint; `{{I_DONT_KNOW}}` is an optional query parameter in case no answer is found; and `{{CONTEXT}}` corresponds to the sections that Markprompt automatically injects based on vector similarities between the prompt and the indexed content sections.
+
+When querying the completions endpoint, you can pass along your own custom prompt template. This can be useful for things like:
+
+- Adding branding and tone
+- Replying in other languages than English
+- Adding business logic
+
+Here is a sample request with a custom template:
+
+```js
+const res = await fetch('https://api.markprompt.com/v1/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    prompt: 'How do I self-host a database?',
+    iDontKnowMessage: 'I don't know',
+    projectKey: '<your_project_key>',
+    model: 'gpt-4',
+    promptTemplate: 'You are a support engineer working at Acme! You write in a very friendly, cheerful tone. [...]'
+  }),
+});
+```
+
+Here are some simple examples of custom prompt templates:
+
+### Branding and tone
+
+Here is a simple example adding branding and tone instructions:
+
+```
+You are a support engineer working at Acme! You write in a very friendly, cheerful tone.
+...
+```
+
+### Internationalization
+
+Another example is producing consistent answers in specific languages. For instance, if your content is in Japanese, you will probably want to use a Japanese prompt:
+
+```
+あなたは人々を助けることが大好きな非常に熱心な会社の代表者です！以下のドキュメントのセクション（セクションIDで始まる）を使用して、その情報だけを使用して質問に答え、Markdown形式で出力してください。
+...
+```
+
+### Business logic
+
+Here is an example showing how to handle some seemingly complex requirements by properly engineering a prompt. The scenario is the following: some pages of your docs contain anchor links, like `[Step 1](#step-1)`, to nagivate to other parts of the same page. Let's say the completions endpoint produces an answer based off of three different pages. We want that when clicking the anchor link, it opens up the page that contains this link specifically. Fortunately, in addition to the section content, Markprompt injects the associated section id (typically, the path of the file where the content is from, like `/docs/introduction/getting-started.md`), and this id can be used to construct an absolute link, for instance `[Step 1](/introduction/getting-started#step-1)`. The following prompt will take care of prepending the appropriate base path to anchor links:
+
+```
+You are a very enthusiastic company representative from Acme who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
+
+In the content, you may find relative links in Markdown format. Some examples are [Step 1](#step1), [Creating a project](getting-started/new-project.md), [Home](/docs/index.md). If you encounter such a link, you need to reconstruct the full path. Here is how you should do it:
+- First, transform the section id to an absolute URL path, and remove the "/docs" prefix. For instance, "/docs/getting-started/create-project.md" should be turned into "/getting-started/create-project". Note that filenames like "index.md" corresponding to a root path, so for instance, "/docs/tutorials/index.md" becomes "/docs/tutorials".
+- Given this absolute base path, prepend it to the relative link. For instance, if the link "[Step 1](#step1)" comes from a section whose id is "/docs/getting-started/create-project.md", then this link should be turned into "[Step 1](/getting-started/create-project#step1)". Similarly, if the link [Creating a project](getting-started/new-project.md) comes from a section whose id is "/docs/tutorial/index.md", then this link should be turned into "[Creating a project](/tutorial/getting-started/new-project)".
+
+Finally, you should always offer answers with high conviction, based on the provided context. If you are unsure and the answer is not explicitly written in the context, say "Sorry, I do not know.".
+
+Context sections:
+---
+{{CONTEXT}}
+
+Question: "{{PROMPT}}"
+
+Answer (including related code snippets if available):`
+```

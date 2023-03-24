@@ -1,0 +1,27 @@
+## FAQ
+
+{% collapsegroup %}
+{% collapse title="Does Markprompt come up with imaginary answers?" %}
+This is unlikely. Markprompt mitigates this in various ways. For a starter, the underlying prompt is instructed to only say things with high levels of confidence based on the content that you have provided during training. The default prompt that Markprompt uses is the following:
+
+```
+{% $defaultPromptTemplate %}
+```
+
+{% note %}
+Note that this prompt can be customized via a [template](#templates), which can change this behavior, e.g. if omitting the instructions to exclusively use the information provided by the context.
+{% /note %}
+
+We also use a low temperature (0.1), giving little room for freedom. At worst, it comes with an "I don't know" result, which oftentimes is an indication that the content was not clear in the first place. Making the content more explicit, or providing more information, usually fixes this.
+{% /collapse %}
+{% collapse title="Why are no results returned even if the information is present in my content?" %}
+The main cause for this is that the section where the information is present is too long. Markprompt currently has a token cutoff of 3000, which corresponds to approximately 800 words. This means that sections longer than ca. 800 words will not be included in the context for the prompt. This is usually an acceptable limit for Markdown files, where each file is split according to headings. For plain text files, there are no obvious delimiters, so the entire file is considered to be a section. If this file has more than 3000 tokens, its content will not be part of the prompt. The solution is to either translate the file to a Markdown file with headings to chunk it up, or to split the file into smaller files and send each of them for training separately. We are working on ways to split up non-Markdown files to address this.
+{% /collapse %}
+{% collapse title="Where can I find my project keys?" %}
+Your project keys can be found by navigating to your project and opening the Settings tab.
+{% /collapse %}
+{% collapse title="Why did it fail to train on my large GitHub repo?" %}
+Syncing large repositories (>100 Mb) is not yet supported. In this case, we recommend using file uploads or the [train API](#train-content).
+{% /collapse %}
+{% /collapsegroup %}
+

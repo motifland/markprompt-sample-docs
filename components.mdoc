@@ -1,0 +1,414 @@
+## Components
+
+### React
+
+The Markprompt React component offers a simple way to add a chat prompt to your website, with just a few lines of code.
+
+{% playground /%}
+
+#### Installation and usage
+
+{% note %}
+For a fully working example, check out the [Markprompt starter template](https://github.com/motifland/markprompt-starter-template).
+{% /note %}
+
+In Node, install Markprompt via NPM or Yarn:
+
+```bash
+# NPM
+npm install markprompt
+# Yarn
+yarn add markprompt
+```
+
+In your React application, paste the following in an MDX, JSX or TSX file:
+
+```jsx
+import { Markprompt } from 'markprompt';
+
+function MyPrompt() {
+  return <Markprompt projectKey="<projectKey>" />;
+}
+```
+
+replacing `<projectKey>` with the key associated to your project. It can be obtained in the project settings under "Project key".
+
+#### Component API
+
+{% table %}
+* Prop
+* Default value
+* Description
+---
+* `projectKey`
+*
+* Your project&apos;s API key, found in the project settings. Use the test key for local development to bypass domain whitelisting.
+---
+* `model`
+* `gpt-3.5-turbo`
+* `gpt-4` | `gpt-4-0314` | `gpt-4-32k` | `gpt-4-32k-0314` | `gpt-3.5-turbo` | `gpt-3.5-turbo-0301` | `text-davinci-003` | `text-davinci-002` | `text-curie-001` | `text-babbage-001` | `text-ada-001` | `davinci` | `curie` | `babbage` | `ada`
+---
+* `iDontKnowMessage`
+* Sorry, I am not sure how to answer that.
+* Fallback message in can no answer is found.
+---
+* `placeholder`
+* Ask me anything...
+* Message to show in the input box when no text has been entered.
+---
+* `promptTemplate`
+*
+* Custom [prompt template](#templates) that wraps prompt and context.
+{% /table %}
+
+Example:
+
+```jsx
+<Markprompt
+  projectKey="..."
+  model="..."
+  iDontKnowMessage="Sorry, I don't know!"
+  placeholder="Ask Acme docs..."
+/>
+```
+
+#### Development setup
+
+When testing in a local development environment, for instance on localhost, use the **development project key**. This is a private key that can be used from any host, bypassing domain whitelisting. For that reason, make sure to keep it private.
+
+#### Production setup
+
+When going live, the use the **production project key**. This is a public key that can safely be shared, and can only access the API from whitelisted domains. Whitelisting a domain is likewise done in the project settings.
+
+#### Styling
+
+Currently, the Markprompt component is styled using Tailwind CSS, and therefore requires a working Tailwind configuration. We are planning to make it headless, for more flexible options.
+
+### Web Component
+
+The Markprompt Web Component offers a simple way to add a chat prompt to your website directly in your HTML.
+
+#### Installation and usage
+
+Add the following script tag to your HTML page:
+
+```html
+<script type="module" src="https://esm.sh/@markprompt/web@0.3.5" />
+```
+
+Then add the `markprompt-content` component anywhere on your page:
+
+```html
+<markprompt-content projectKey="<project-key>" />
+```
+
+replacing `<projectKey>` with the key associated to your project. It can be obtained in the project settings under "Project key".
+
+#### Component API
+
+{% table %}
+* Prop
+* Default value
+* Description
+---
+* `projectKey`
+*
+* Your project&apos;s API key, found in the project settings. Use the test key for local development to bypass domain whitelisting.
+---
+* `model`
+* `gpt-3.5-turbo`
+* `gpt-4` | `gpt-4-0314` | `gpt-4-32k` | `gpt-4-32k-0314` | `gpt-3.5-turbo` | `gpt-3.5-turbo-0301` | `text-davinci-003` | `text-davinci-002` | `text-curie-001` | `text-babbage-001` | `text-ada-001` | `davinci` | `curie` | `babbage` | `ada`
+---
+* `iDontKnowMessage`
+* Sorry, I am not sure how to answer that.
+* Fallback message in can no answer is found.
+---
+* `placeholder`
+* Ask me anything...
+* Message to show in the input box when no text has been entered.
+---
+* `promptTemplate`
+*
+* Custom [prompt template](#templates) that wraps prompt and context.
+---
+* `idToRefMap`
+* `{}`
+* A map of the form `{ string: { href, label }}` providing a mapping between reference ids and href/label, used to turn the reference into links.
+{% /table %}
+
+Example:
+
+```html
+<markprompt-content
+  projectKey="..."
+  model="..."
+  iDontKnowMessage="Sorry, I don't know!"
+  placeholder="Ask Acme docs..."
+/>
+```
+
+The component also supports the following methods:
+
+- `getRefFromId(id: string) => { [key: string]: { href: string, label: string} }`
+
+  This map can be used as a functional alternative to `idToRefMap`, e.g. for dynamically computing links and labels:
+
+  ```js
+  const component = document.getElementsByTagName('markprompt-content')[0];
+
+  component.getRefFromId = (id) => {
+    let path = id.replace(/\.md$/, '')
+
+    return { label: path, href: path }
+  };
+  ```
+
+- `reset()`
+
+  Clears the input and the result, e.g. when closing a dialog containing the component.
+
+- `focus()`
+
+  Brings focus on the input component, e.g. when opening a dialog containing the component.
+
+#### Development setup
+
+When testing in a local development environment, for instance on localhost, use the **development project key**. This is a private key that can be used from any host, bypassing domain whitelisting. For that reason, make sure to keep it private.
+
+#### Production setup
+
+When going live, the use the **production project key**. This is a public key that can safely be shared, and can only access the API from whitelisted domains. Whitelisting a domain is likewise done in the project settings.
+
+#### Styling
+
+The Markprompt web component is styled via the following CSS variables (shown with some sample values):
+
+```css
+--accent-color
+--answer-code-background-color
+--answer-code-border-radius
+--answer-code-padding-x
+--answer-code-padding-y
+--answer-heading1-font-size
+--answer-heading1-margin-bottom
+--answer-heading1-margin-top
+--answer-heading2-font-size
+--answer-heading2-margin-bottom
+--answer-heading2-margin-top
+--answer-heading3-font-size
+--answer-heading3-margin-bottom
+--answer-heading3-margin-top
+--answer-heading4-margin-bottom
+--answer-heading4-margin-top
+--answer-image-border-radius
+--answer-image-margin-y
+--answer-list-bullet-color
+--answer-list-numbered-color
+--answer-list-padding-left
+--answer-list-padding-y
+--answer-max-width
+--answer-padding
+--answer-paragraph-margin
+--answer-pre-background-color
+--answer-pre-border-radius
+--answer-pre-line-height
+--answer-pre-margin-y
+--answer-pre-padding
+--answer-pre-text-color
+--answer-quote-border-color
+--answer-quote-border-left
+--answer-quote-font-style
+--answer-quote-margin-y
+--answer-quote-padding-left
+--answer-table-head-padding
+--answer-table-margin-y
+--border-color
+--caret-color
+--font-size-base
+--font-size-sm
+--font-size-xs
+--input-container-background-color
+--input-container-border-bottom-style
+--input-container-border-bottom-width
+--input-container-gap
+--input-container-height
+--input-container-icon-size
+--input-container-padding
+--input-placeholder-color
+--line-height-base
+--link-color
+--link-text-decoration
+--link-weight
+--prompt-input-border-radius
+--prompt-input-padding
+--references-container-color
+--references-container-line-height
+--references-container-max-height
+--references-container-padding
+--references-gap
+--references-heading-font-size
+--references-heading-font-weight
+--references-heading-padding-bottom
+--reference-item-background-color-hover
+--reference-item-background-color
+--reference-item-border-radius
+--reference-item-font-size
+--reference-item-font-weight
+--reference-item-padding-x
+--reference-item-padding-y
+--result-background-color
+--search-icon-color
+--slide-up-translate-x
+--spacer-height
+--text-color
+```
+
+For example, here is a CSS configuration that sets the background color in light and dark mode:
+
+```css
+markprompt-content {
+  --background-color: #ffffff;
+}
+
+markprompt-content.dark {
+  --background-color: #000000;
+}
+```
+
+Dark mode can be achieved by add the `dark` class to the component. It can also be toggled dynamically using [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver):
+
+```html
+<markprompt-content class="dark" />
+```
+
+#### Full example
+
+Here is a full example HTML file.
+
+```html
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <script src="https://esm.sh/@markprompt/web@0.3.4" type="module"></script>
+    <style>
+      html {
+        font-family: sans-serif;
+      }
+
+      markprompt-content {
+        display: block;
+        width: 600px;
+        height: 400px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        overflow: hidden;
+
+        --accent-color: #6366f1;
+        --answer-code-background-color: #f1f5f9;
+        --answer-code-border-radius: 0.25em;
+        --answer-code-padding-x: 4px;
+        --answer-code-padding-y: 2px;
+        --answer-heading1-font-size: 2.25em;
+        --answer-heading1-margin-bottom: 0.8888889em;
+        --answer-heading1-margin-top: 0;
+        --answer-heading2-font-size: 1.5em;
+        --answer-heading2-margin-bottom: 1em;
+        --answer-heading2-margin-top: 2em;
+        --answer-heading3-font-size: 1.25em;
+        --answer-heading3-margin-bottom: 0.6em;
+        --answer-heading3-margin-top: 1.6em;
+        --answer-heading4-margin-bottom: 0.5em;
+        --answer-heading4-margin-top: 1.5em;
+        --answer-image-border-radius: 0.375em;
+        --answer-image-margin-y: 1em;
+        --answer-list-bullet-color: #d4d4d4;
+        --answer-list-numbered-color: #171717;
+        --answer-list-padding-left: 1.625em;
+        --answer-list-padding-y: 0.5em;
+        --answer-max-width: 65ch;
+        --answer-padding: 16px;
+        --answer-paragraph-margin: 20px;
+        --answer-pre-background-color: #0f172a;
+        --answer-pre-border-radius: 0.375em;
+        --answer-pre-line-height: 1.5;
+        --answer-pre-margin-y: 1em;
+        --answer-pre-padding: 1em;
+        --answer-pre-text-color: #f8fafc;
+        --answer-quote-border-color: #171717;
+        --answer-quote-border-left: 0.2em;
+        --answer-quote-font-style: italic;
+        --answer-quote-margin-y: 1.5em;
+        --answer-quote-padding-left: 1em;
+        --answer-table-head-padding: 0.5em;
+        --answer-table-margin-y: 1em;
+        --border-color: #e5e5e5;
+        --caret-color: #6366f1;
+        --font-size-base: 16px;
+        --font-size-sm: 14px;
+        --font-size-xs: 12px;
+        --input-container-background-color: #ffffff;
+        --input-container-border-bottom-style: solid;
+        --input-container-border-bottom-width: 1px;
+        --input-container-gap: 8px;
+        --input-container-height: 40px;
+        --input-container-icon-size: 16px;
+        --input-container-padding: 16px;
+        --input-placeholder-color: #a3a3a3;
+        --line-height-base: 1.5;
+        --link-color: #6366f1;
+        --link-text-decoration: underline;
+        --link-weight: 600;
+        --prompt-input-border-radius: 0px;
+        --prompt-input-padding: 8px;
+        --references-container-color: #f8fafc;
+        --references-container-line-height: 20px;
+        --references-container-max-height: 200px;
+        --references-container-padding: 16px;
+        --references-gap: 8px;
+        --references-heading-font-size: 12px;
+        --references-heading-font-weight: 600;
+        --references-heading-padding-bottom: 12px;
+        --reference-item-background-color-hover: #fff;
+        --reference-item-background-color: #fff;
+        --reference-item-border-radius: 4px;
+        --reference-item-font-size: 12px;
+        --reference-item-font-weight: 600;
+        --reference-item-padding-x: 8px;
+        --reference-item-padding-y: 4px;
+        --result-background-color: #f8fafc;
+        --search-icon-color: #6366f1;
+        --slide-up-translate-x: 20px;
+        --spacer-height: 100px;
+        --text-color: #171717;
+      }
+    </style>
+  </head>
+  <body>
+    <markprompt-content projectKey="<project-key>" />
+    <script>
+      const component = document.getElementsByTagName("markprompt-content")[0];
+
+      component.getRefFromId = (id) => {
+        const href = id.replace(/.md(x|oc)?$/, "");
+        const label = id
+          .split("/")
+          .slice(-1)[0]
+          .split(".")
+          .slice(0, -1)
+          .join(".");
+        return { href, label };
+      };
+
+      component.promptTemplate = `You are a very enthusiastic company representative who loves to help people! Given the following sections from the documentation (preceded by a section id), answer the question using only that information, outputted in Markdown format. If you are unsure and the answer is not explicitly written in the documentation, say "\{\{I_DONT_KNOW\}\}".
+
+Context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):\n`;
+    </script>
+  </body>
+</html>
+```

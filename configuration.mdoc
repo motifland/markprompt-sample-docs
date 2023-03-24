@@ -1,0 +1,24 @@
+## Configuration
+
+You can specify glob patterns for paths to include and exclude from training in the project configuration file. It can be found in the project settings, and is a JSON file of the form:
+
+```json
+{
+  "include": [
+    "**/*.md",
+    "**/*.mdoc",
+    "**/*.mdx",
+    "**/*.html",
+    "**/*.txt"
+  ],
+  "exclude": []
+}
+```
+
+Each entry in the `include` and `exclude` list is a [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)). Here a some examples:
+
+- `"**/*.md"`: all paths ending with `.md`, in any folder.
+- `/README.md`: the `README.md` file in the root folder.
+- `/docs/*`: all files in the `/docs` folder, but not in subfolders of the `/docs` folder.
+
+The configuration should be read as follows: if the file's path does not match a pattern under the `include` entry, it will be excluded. If it does, it will be included, unless it matches a pattern in the `exclude` entry.
